@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Development & Succession Profiles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,450;9..144,560;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bone:#F4F1E8;
+    --paper:#FBFAF6;
+    --ink:#1B1F1C;
+    --ink-soft:#565F59;
+    --turf:#6E1B3C;
+    --turf-deep:#3E0F22;
+    --turf-light:#9A3D63;
+    --clay:#101B2E;
+    --gold:#E0A23E;
+    --line: rgba(27,31,28,0.13);
+    --line-soft: rgba(27,31,28,0.07);
+    --red:#B5453D;
+    --amber:#C89339;
+    --green:#3C8B69;
+    --shadow: 0 1px 2px rgba(19,41,35,0.06), 0 8px 24px -12px rgba(19,41,35,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bone);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--gold); color:var(--turf-deep);}
+  .app{max-width:920px;margin:0 auto;padding:28px 20px 90px;}
+
+  /* ---------- Header ---------- */
+  .masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;}
+  .masthead-title{font-family:'Fraunces',serif;font-weight:560;font-size:15px;letter-spacing:0.02em;color:var(--turf);}
+  .masthead-sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .save-pill{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;padding-top:4px;flex-shrink:0;}
+  .save-dot{width:6px;height:6px;border-radius:50%;background:var(--green);transition:background .3s;}
+  .save-dot.saving{background:var(--amber);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .back-link{
+    display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-soft);
+    background:none;border:none;cursor:pointer;padding:2px 0 12px;
+  }
+  .back-link:hover{color:var(--turf);}
+
+  /* ---------- Roster ---------- */
+  .roster-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;}
+  .roster-title{font-family:'Fraunces',serif;font-weight:650;font-size:26px;color:var(--ink);}
+  .roster-count{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+  .primary-btn{
+    font-family:'Inter';font-size:13.5px;font-weight:600;color:var(--bone);background:var(--turf);
+    border:none;padding:11px 18px;border-radius:11px;cursor:pointer;white-space:nowrap;transition:background .15s;
+  }
+  .primary-btn:hover{background:var(--turf-deep);}
+  .roster-search{margin-bottom:18px;}
+  .roster-search input{max-width:340px;}
+  .roster-grid{display:flex;flex-direction:column;gap:10px;}
+  .roster-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+    cursor:pointer;transition:border-color .15s, box-shadow .15s;
+  }
+  .roster-card:hover{border-color:var(--turf-light);box-shadow:var(--shadow);}
+  .roster-card.archived{opacity:.55;}
+  .roster-left{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .roster-name{font-family:'Fraunces',serif;font-weight:650;font-size:17px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .roster-meta{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .roster-right{display:flex;align-items:center;gap:18px;flex-shrink:0;}
+  .roster-stat{text-align:right;}
+  .roster-stat-label{font-size:10.5px;color:var(--ink-soft);margin-bottom:3px;}
+  .roster-stat-value{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+  .roster-actions{display:flex;gap:6px;}
+  .roster-empty{text-align:center;padding:70px 20px;color:var(--ink-soft);}
+  .roster-empty-title{font-family:'Fraunces',serif;font-size:19px;color:var(--ink);margin-bottom:8px;}
+
+  /* ---------- Snapshot dashboard ---------- */
+  .snapshot{
+    background:linear-gradient(155deg, var(--turf) 0%, var(--turf-deep) 100%);
+    border-radius:20px;
+    padding:30px 28px 26px;
+    color:var(--bone);
+    position:relative;
+    overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  .snapshot-minimal{padding:24px 28px;}
+  .snapshot-minimal .snap-name{position:relative;z-index:1;}
+  .snapshot-minimal .snap-role{position:relative;z-index:1;}
+  .snapshot::before{
+    content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle, rgba(224,162,62,0.20), transparent 70%);
+  }
+  .snap-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;position:relative;z-index:1;}
+  .snap-name{font-family:'Fraunces',serif;font-weight:650;font-size:32px;line-height:1.1;letter-spacing:-0.01em;}
+  .snap-role{font-size:14.5px;color:rgba(244,241,232,0.72);margin-top:6px;}
+  .snap-meta{font-size:12.5px;color:rgba(244,241,232,0.55);margin-top:3px;}
+  .snap-season-badge{
+    font-size:11.5px;color:rgba(244,241,232,0.75);
+    border:1px solid rgba(244,241,232,0.28);
+    padding:5px 11px;border-radius:100px;white-space:nowrap;
+  }
+  .snap-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px;position:relative;z-index:1;
+  }
+  .snap-grid-2{grid-template-columns:repeat(2,1fr);}
+  @media (max-width:720px){.snap-grid{grid-template-columns:repeat(2,1fr);} .snap-grid-2{grid-template-columns:1fr;}}
+  .snap-card{
+    background:rgba(244,241,232,0.07);
+    border:1px solid rgba(244,241,232,0.14);
+    border-radius:14px;padding:14px 15px;
+  }
+  .snap-label{font-size:11px;color:rgba(244,241,232,0.55);margin-bottom:8px;}
+  .snap-value{font-size:15px;font-weight:600;line-height:1.3;}
+  .readiness-chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;}
+  .rdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .rdot.developing{background:var(--red);}
+  .rdot.building{background:var(--amber);}
+  .rdot.ready{background:var(--green);}
+
+  /* ---------- Tabs ---------- */
+  .tabbar{display:flex;align-items:center;gap:4px;margin:26px 0 20px;overflow-x:auto;padding-bottom:2px;}
+  .tab{
+    font-family:'Inter';font-size:13.5px;font-weight:600;color:var(--ink-soft);
+    background:transparent;border:none;padding:9px 15px;border-radius:9px;cursor:pointer;
+    white-space:nowrap;transition:background .15s, color .15s;
+  }
+  .tab:hover{background:var(--line-soft);}
+  .tab.active{background:var(--turf);color:var(--bone);}
+  .tab-add{
+    font-size:13.5px;font-weight:600;color:var(--turf);background:transparent;
+    border:1.5px dashed var(--line);padding:8px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;
+  }
+  .tab-add:hover{border-color:var(--turf-light);background:var(--line-soft);}
+
+  .persp-tabs{display:flex;gap:4px;background:var(--bone);border-radius:10px;padding:4px;margin-bottom:4px;}
+  .persp-tab{
+    flex:1;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:transparent;border:none;
+    padding:8px 10px;border-radius:7px;cursor:pointer;transition:background .15s,color .15s;
+  }
+  .persp-tab:hover{color:var(--turf);}
+  .persp-tab.active{background:var(--paper);color:var(--turf);box-shadow:var(--shadow);}
+
+  .season-toolbar{display:flex;justify-content:flex-end;gap:8px;margin:-10px 0 18px;flex-wrap:wrap;}
+  .tool-btn{
+    font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--paper);
+    border:1px solid var(--line);padding:6px 11px;border-radius:8px;cursor:pointer;
+  }
+  .tool-btn:hover{border-color:var(--turf-light);color:var(--turf);}
+  .tool-btn.danger:hover{border-color:var(--red);color:var(--red);}
+
+  /* ---------- Cards / accordion ---------- */
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    margin-bottom:14px;overflow:hidden;
+  }
+  .card-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 18px;cursor:pointer;user-select:none;
+  }
+  .card-head-left{display:flex;align-items:center;gap:11px;}
+  .card-icon{
+    width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    background:var(--bone);flex-shrink:0;
+  }
+  .card-title{font-family:'Fraunces',serif;font-weight:560;font-size:16.5px;color:var(--turf);}
+  .card-desc{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+  .chev{transition:transform .25s ease; color:var(--ink-soft); flex-shrink:0;}
+  .card.open .chev{transform:rotate(180deg);}
+  .card-body{
+    max-height:0;overflow:hidden;transition:max-height .3s ease;
+  }
+  .card.open .card-body{max-height:4000px;}
+  .card-body-inner{padding:2px 18px 20px;}
+
+  /* ---------- Form elements ---------- */
+  label.field-label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;}
+  label.field-label:first-child{margin-top:0;}
+  input[type=text], textarea, select{
+    width:100%;font-family:'Inter';font-size:14px;color:var(--ink);
+    background:var(--bone);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;outline:none;transition:border-color .15s, background .15s;
+  }
+  input[type=text]:focus, textarea:focus, select:focus{border-color:var(--turf-light); background:var(--paper);}
+  textarea{resize:vertical;min-height:64px;line-height:1.45;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:600px){.field-row{grid-template-columns:1fr;}}
+
+  .chip-select-group{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip-toggle{
+    font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:100px;
+    border:1.5px solid var(--line);background:var(--bone);color:var(--ink-soft);cursor:pointer;
+    transition:all .15s;
+  }
+  .chip-toggle.on{background:var(--turf);border-color:var(--turf);color:var(--bone);}
+
+  /* ---------- Goals ---------- */
+  .goal-card{
+    border:1px solid var(--line);border-radius:13px;padding:14px 15px;margin-bottom:12px;background:var(--bone);
+    position:relative;
+  }
+  .goal-remove{
+    position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;
+    color:var(--ink-soft);font-size:15px;line-height:1;padding:4px;border-radius:6px;
+  }
+  .goal-remove:hover{color:var(--red);background:rgba(181,69,61,0.1);}
+  .add-btn{
+    display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--turf);
+    background:transparent;border:1.5px dashed var(--line);padding:9px 15px;border-radius:10px;cursor:pointer;
+    width:100%;justify-content:center;margin-top:4px;
+  }
+  .add-btn:hover{border-color:var(--turf-light);background:var(--paper);}
+
+  /* ---------- Chips (experiences) ---------- */
+  .chip-wrap{display:flex;flex-wrap:wrap;gap:9px;}
+  .exp-chip{
+    display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;
+    background:var(--turf);color:var(--bone);padding:8px 8px 8px 14px;border-radius:100px;
+  }
+  .exp-chip button{background:rgba(244,241,232,0.18);border:none;color:var(--bone);width:18px;height:18px;
+    border-radius:50%;cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .exp-chip.suggest{background:var(--bone);color:var(--turf);border:1.5px dashed var(--line);}
+  .exp-chip.suggest:hover{border-color:var(--turf-light);}
+  .exp-input-row{display:flex;gap:8px;margin-top:12px;}
+  .exp-input-row input{flex:1;}
+  .exp-input-row button{
+    background:var(--turf);color:var(--bone);border:none;border-radius:10px;padding:0 16px;font-weight:600;
+    font-size:13px;cursor:pointer;
+  }
+
+  /* ---------- Capability ---------- */
+  .cap-block{border:1px solid var(--line);border-radius:13px;padding:15px 16px;margin-bottom:12px;background:var(--bone);}
+  .cap-block-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
+  .cap-name{font-family:'Fraunces',serif;font-weight:650;font-size:15.5px;color:var(--turf);}
+  .cap-sub{font-size:11.5px;color:var(--ink-soft);}
+  .rating-row{display:flex;gap:7px;margin:12px 0 12px;}
+  .rating-btn{
+    flex:1;text-align:center;padding:9px 4px;border-radius:9px;border:1.5px solid var(--line);
+    background:var(--paper);cursor:pointer;font-size:11.5px;font-weight:600;color:var(--ink-soft);
+    transition:all .15s;
+  }
+  .rating-btn .num{display:block;font-family:'Fraunces',serif;font-size:16px;font-weight:650;margin-bottom:2px;color:var(--ink);}
+  .rating-btn.sel{background:var(--turf);border-color:var(--turf);color:var(--bone);}
+  .rating-btn.sel .num{color:var(--bone);}
+  .rating-btn.compact{
+    flex:0 0 auto;min-width:44px;padding:11px 0;
+    font-family:'Fraunces',serif;font-weight:650;font-size:16px;color:var(--ink);
+  }
+  .rating-btn.compact.sel{color:var(--bone);}
+  .likert-legend{
+    display:flex;flex-wrap:wrap;gap:6px 16px;font-size:11px;color:var(--ink-soft);
+    margin-bottom:14px;padding:10px 12px;background:var(--bone);border-radius:10px;
+  }
+  .likert-legend b{color:var(--turf);font-family:'Fraunces',serif;margin-right:4px;}
+  .carried-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    background:rgba(224,162,62,0.14);border:1px solid rgba(224,162,62,0.4);border-radius:11px;
+    padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:var(--ink);
+  }
+  .carried-tag{
+    font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--gold);
+    background:rgba(224,162,62,0.16);border:1px solid rgba(224,162,62,0.4);padding:3px 8px;border-radius:100px;
+  }
+
+  .cap-dashboard{display:flex;flex-direction:column;gap:10px;margin-bottom:6px;}
+  .cap-bar-row{display:grid;grid-template-columns:70px 1fr 20px;align-items:center;gap:10px;}
+  .cap-bar-label{font-size:12px;font-weight:600;color:var(--ink-soft);}
+  .cap-bar-track{height:8px;background:var(--line-soft);border-radius:100px;overflow:hidden;}
+  .cap-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--turf-light),var(--turf));transition:width .5s ease;}
+  .cap-bar-num{font-size:12px;font-weight:700;color:var(--turf);text-align:right;}
+  .cap-overall{
+    margin-top:14px;padding-top:14px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .cap-overall-label{font-size:12px;color:var(--ink-soft);}
+  .cap-overall-value{font-family:'Fraunces',serif;font-weight:650;font-size:19px;color:var(--turf);}
+  .beh-list{margin:6px 0 12px;padding-left:18px;font-size:12.5px;color:var(--ink-soft);line-height:1.6;}
+  .beh-list li{margin-bottom:2px;}
+  .beh-rating-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);margin:10px 0 6px;}
+
+  .item-block{border-top:1px solid var(--line-soft);padding:14px 0;}
+  .item-block:first-of-type{border-top:none;padding-top:6px;}
+  .item-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .item-title{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .item-code{display:inline-block;font-family:'Fraunces',serif;font-weight:650;color:var(--turf);margin-right:5px;}
+  .item-desc{font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
+  .item-rating-pair{display:flex;gap:22px;margin-top:8px;flex-wrap:wrap;}
+  .item-rating-col{flex:1;min-width:160px;}
+  .item-rating-col .rating-row{margin:4px 0 0;}
+  .item-rating-col .beh-rating-label{margin:0 0 5px;}
+  .group-overall{
+    margin-top:12px;padding-top:12px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-soft);font-weight:600;
+  }
+  .group-overall-value{font-family:'Fraunces',serif;font-weight:650;font-size:15px;color:var(--turf);}
+
+  /* ---------- Misc ---------- */
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+  .empty-note{font-size:13px;color:var(--ink-soft);padding:10px 2px;}
+  select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23565F59' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* ============================= STATE ============================= */
+const STORAGE_KEY = 'coach-profiles:v2';
+const LEGACY_KEY = 'coach-profile:v1';
+
+let state = { coaches:[] };
+let activeCoachId = null;   // null = roster view
+let activeTab = 'profile';  // 'profile' or a season id, scoped to the open coach
+let openCards = {};
+let sectionTab = {}; // key: seasonId+':capability'|':behaviours' -> 'self'|'manager'|'compare'
+let rosterFilter = '';
+let saveTimer = null;
+let showArchivedCoaches = false;
+let showArchivedSeasons = false;
+
+const CAPS = [
+  {key:'skill', label:'Skill', sub:'Develop the Craft', items:[
+    {code:'S1', title:'Cricket skill knowledge', desc:'Contemporary role-specific skill knowledge.'},
+    {code:'S2', title:'Skill diagnosis', desc:'Identifies what limits or enables performance.'},
+    {code:'S3', title:'Skill acquisition', desc:'Understands how players learn and retain skill.'},
+    {code:'S4', title:'Teaching & intervention', desc:'Chooses the right coaching intervention.'},
+    {code:'S5', title:'Individual development', desc:'Adapts coaching to the individual.'},
+    {code:'S6', title:'Feedback & progression', desc:'Gives clear feedback and tracks progress.'},
+  ]},
+  {key:'game', label:'Game', sub:'Develop the Cricketer', items:[
+    {code:'G1', title:'Game understanding', desc:'Understands roles, formats and game demands.'},
+    {code:'G2', title:'Tactical awareness', desc:'Reads conditions, opposition and situations.'},
+    {code:'G3', title:'Player decision-making', desc:'Builds independent decision-makers.'},
+    {code:'G4', title:'Game preparation', desc:'Creates role and plan clarity.'},
+    {code:'G5', title:'Representative training', desc:'Recreates competition pressure and variability.'},
+    {code:'G6', title:'Review & learning', desc:'Turns performance into learning.'},
+  ]},
+  {key:'athlete', label:'Athlete', sub:'Prepare the Performer', items:[
+    {code:'A1', title:'Training design', desc:'Plans purposeful performance-focused training.'},
+    {code:'A2', title:'Individual preparation', desc:'Individualises preparation and workload.'},
+    {code:'A3', title:'Season planning', desc:'Connects sessions to longer-term objectives.'},
+    {code:'A4', title:'Athlete readiness', desc:'Values preparation, recovery and durability.'},
+    {code:'A5', title:'Integrated support', desc:'Works effectively with specialist staff.'},
+    {code:'A6', title:'Adaptability', desc:'Adjusts plans to readiness and performance needs.'},
+  ]},
+  {key:'mindset', label:'Mindset', sub:'Develop the Competitor', items:[
+    {code:'M1', title:'Confidence', desc:'Builds belief through appropriate challenge.'},
+    {code:'M2', title:'Resilience', desc:'Helps players respond constructively to setbacks.'},
+    {code:'M3', title:'Independence', desc:'Transfers ownership to the player.'},
+    {code:'M4', title:'Performing under pressure', desc:'Practises decisions and execution under pressure.'},
+    {code:'M5', title:'Learning mindset', desc:'Encourages curiosity, reflection and experimentation.'},
+    {code:'M6', title:'Individual understanding', desc:'Reads personality, motivation and emotion.'},
+  ]},
+  {key:'person', label:'Person', sub:'Develop the Human', items:[
+    {code:'P1', title:'Communication', desc:'Communicates clearly and consistently.'},
+    {code:'P2', title:'Listening & relationships', desc:'Builds connection through genuine listening.'},
+    {code:'P3', title:'Trust & integrity', desc:'Keeps commitments and builds trust.'},
+    {code:'P4', title:'Standards & accountability', desc:'Sets standards and addresses behaviour.'},
+    {code:'P5', title:'Holistic player care', desc:'Understands the person beyond cricket.'},
+    {code:'P6', title:'Leadership & environment', desc:'Positively shapes culture and alignment.'},
+  ]},
+];
+const RATING_LABELS = ['','Developing','Capable','Effective','Highly Effective','System Leader'];
+const COMPETENCIES = [
+  {key:'partnership', label:'Building Partnerships', behaviours:['Seeks opportunities to build relationships','Clarifies shared goals','Develops others\' and own ideas','Facilitates agreement','Supports partners','Involves others','Maintains and enhances self-esteem']},
+  {key:'coachingOthers', label:'Coaching & Developing Others', behaviours:['Clarifies performance','Provides timely feedback','Conveys performance expectations and implications','Evaluates misalignment','Facilitates development','Fosters developmental relationships']},
+  {key:'influencing', label:'Influencing', behaviours:['Clarifies the situation','Shares own perspective to build trust','Builds a compelling case','Involves others in exploring solutions','Empathises with others\' concerns','Steers commitment to action']},
+  {key:'guidingTeam', label:'Guiding Team Success', behaviours:['Develops direction','Develops structure','Supports the team','Facilitates agreement','Involves others','Informs team']},
+  {key:'emotionalIntelligence', label:'Emotional Intelligence', behaviours:['Builds self-awareness','Maintains self-control','Listens and responds with empathy','Asks for help and encourages involvement','Shares thoughts, feelings and rationale','Provides support without removing responsibility','Facilitates discussions']},
+  {key:'decisionMaking', label:'Decision Making', behaviours:['Identifies problems and opportunities','Gathers information','Interprets information','Generates alternatives','Evaluates alternatives and risks','Chooses an effective option','Considers others\' perspectives']},
+  {key:'aligningPerformance', label:'Aligning Performance for Success', behaviours:['Sets performance goals','Involves others','Creates a learning environment','Tracks performance','Evaluates performance','Builds rapport']},
+  {key:'strategicPlanning', label:'Strategic Planning', behaviours:['Gathers information','Organises information','Evaluates and selects strategies','Establishes a high-level plan']},
+];
+const ASPIRATIONS = ['Community','Pathway','State','High Performance','Unsure'];
+const EXPERIENCE_SUGGESTIONS = ['Lead Program','Specialist Coach','State Campaign','Mentor Coach','Talent ID Camp','National Championships','Coach Exchange','Presenting to Panel'];
+
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+/* Builds an { items:[...], notes:'' } entry per group (capability foundation or
+   behaviour competency), carrying forward the previous season's ratings — each
+   marked 'carried' independently for self and manager — when a previous season's
+   group is supplied. */
+function freshItem(){ return {self:0, manager:0, carriedSelf:false, carriedSelfFromYear:null, carriedManager:false, carriedManagerFromYear:null}; }
+function buildItemGroups(defs, itemCountFn, prevGroups, prevYear){
+  const out = {};
+  defs.forEach(d=>{
+    const count = itemCountFn(d);
+    const prevEntry = prevGroups && prevGroups[d.key];
+    const items = [];
+    for(let i=0;i<count;i++){
+      const p = prevEntry && prevEntry.items && prevEntry.items[i];
+      const item = freshItem();
+      if(p && p.self){ item.self = p.self; item.carriedSelf = true; item.carriedSelfFromYear = prevYear; }
+      if(p && p.manager){ item.manager = p.manager; item.carriedManager = true; item.carriedManagerFromYear = prevYear; }
+      items.push(item);
+    }
+    out[d.key] = { items, notes: (prevEntry && prevEntry.notes) || '' };
+  });
+  return out;
+}
+function emptyCapability(prev, prevYear){ return buildItemGroups(CAPS, d=>d.items.length, prev, prevYear); }
+function emptyBehaviours(prev, prevYear){ return buildItemGroups(COMPETENCIES, d=>d.behaviours.length, prev, prevYear); }
+
+function newSeason(year, prevSeason){
+  const prevYear = prevSeason ? prevSeason.year : null;
+  return {
+    id: uid(), year: year, archived:false,
+    development:[], experiences:[],
+    reflection:{impact:'', learn:'', focus:''},
+    capability: emptyCapability(prevSeason ? prevSeason.capability : null, prevYear),
+    behaviours: emptyBehaviours(prevSeason ? prevSeason.behaviours : null, prevYear),
+    developmentFocus:{strength:'', priority:'', action:''}
+  };
+}
+
+function newCoach(){
+  const s1 = newSeason(2026);
+  const s2 = newSeason(2027, s1);
+  const s3 = newSeason(2028, s2);
+  return {
+    id: uid(), archived:false,
+    coach:{ name:'', role:'', program:'', specialistArea:'', yearsCoaching:'', mentor:'',
+            philosophyExperience:'', philosophyBehaviours:'', aspirations:[],
+            environmentCoachVision:'', environmentMentorView:'' },
+    seasons:[ s1, s2, s3 ]
+  };
+}
+
+/* Fills in / migrates fields from profiles saved before this structure existed,
+   so older saved data never breaks the new UI. */
+function normalizeState(){
+  (state.coaches||[]).forEach(ce=>{
+    if(!ce.coach.environmentCoachVision) ce.coach.environmentCoachVision = '';
+    if(!ce.coach.environmentMentorView) ce.coach.environmentMentorView = '';
+    (ce.seasons||[]).forEach(season=>{
+      if(!season.capability) season.capability = emptyCapability();
+      CAPS.forEach(d=>{
+        const entry = season.capability[d.key];
+        if(!entry || !Array.isArray(entry.items)){
+          const notes = (entry && entry.notes) || '';
+          season.capability[d.key] = { items: d.items.map(()=>freshItem()), notes };
+        }else{
+          while(entry.items.length < d.items.length) entry.items.push(freshItem());
+          entry.items.forEach(normalizeItemFlags);
+        }
+      });
+      if(!season.behaviours) season.behaviours = emptyBehaviours();
+      COMPETENCIES.forEach(c=>{
+        const entry = season.behaviours[c.key];
+        if(!entry || !Array.isArray(entry.items)){
+          const notes = (entry && entry.notes) || '';
+          season.behaviours[c.key] = { items: c.behaviours.map(()=>freshItem()), notes };
+        }else{
+          while(entry.items.length < c.behaviours.length) entry.items.push(freshItem());
+          entry.items.forEach(normalizeItemFlags);
+        }
+      });
+    });
+  });
+}
+function normalizeItemFlags(it){
+  if(it.carriedSelf===undefined) it.carriedSelf = false;
+  if(it.carriedSelfFromYear===undefined) it.carriedSelfFromYear = null;
+  if(it.carriedManager===undefined) it.carriedManager = false;
+  if(it.carriedManagerFromYear===undefined) it.carriedManagerFromYear = null;
+}
+
+/* ============================= JSONBIN CONFIG ============================= */
+/* Paste your own bin ID and API key below (jsonbin.io) to sync this profile
+   set across devices/browsers. Until both are filled in, the app still works
+   normally and just saves locally to this browser/session instead. */
+const JSONBIN_BIN_ID  = '6a98f0fdda38895dfe324b3d';
+const JSONBIN_API_KEY = '$2a$10$/0IxTXc47L2vv1kIX1/1DOp197DmewAtRUn.phdTZa9JonwEca072';
+const JSONBIN_ENABLED = !JSONBIN_BIN_ID.startsWith('PASTE_') && !JSONBIN_API_KEY.startsWith('PASTE_');
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+let dataLoaded = false;
+
+/* ============================= PERSISTENCE ============================= */
+async function loadState(){
+  // 1) Try JSONBin first, if configured — this is the shared source of truth
+  if(JSONBIN_ENABLED){
+    try{
+      const res = await fetch(`${JSONBIN_URL}/latest`, {
+        headers: { 'X-Master-Key': JSONBIN_API_KEY }
+      });
+      if(res.ok){
+        const json = await res.json();
+        if(json && json.record && Array.isArray(json.record.coaches)){
+          state = json.record;
+          normalizeState();
+          dataLoaded = true;
+          render();
+          return;
+        }
+      }
+    }catch(e){ console.error('JSONBin load failed, falling back to local storage', e); }
+  }
+
+  // 2) Fall back to this browser's local artifact storage
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      if(parsed && Array.isArray(parsed.coaches)){ state = parsed; normalizeState(); dataLoaded = true; render(); return; }
+    }
+  }catch(e){ /* no local data yet */ }
+
+  // 3) Migrate a single-coach v1 profile if one exists
+  try{
+    const legacy = await window.storage.get(LEGACY_KEY, false);
+    if(legacy && legacy.value){
+      const old = JSON.parse(legacy.value);
+      if(old && old.coach){
+        state = { coaches: [{ id: uid(), archived:false, coach: old.coach, seasons: old.seasons || [] }] };
+      }
+    }
+  }catch(e){ /* nothing to migrate */ }
+
+  normalizeState();
+  dataLoaded = true;
+  persist();
+  render();
+}
+
+function persist(){
+  if(!dataLoaded) return; // never overwrite remote data with an empty initial state
+  const dot = document.getElementById('save-dot');
+  if(dot) dot.classList.add('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    if(JSONBIN_ENABLED){
+      try{
+        await fetch(JSONBIN_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+          body: JSON.stringify(state)
+        });
+      }catch(e){ console.error('JSONBin save failed', e); }
+    }
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+    }catch(e){ /* local storage unavailable outside the artifact preview */ }
+    const d = document.getElementById('save-dot');
+    if(d) d.classList.remove('saving');
+  }, 500);
+}
+
+function update(mutator, opts={}){
+  const scrollY = window.scrollY;
+  mutator(state);
+  persist();
+  render(opts);
+  window.scrollTo(0, scrollY);
+}
+
+/* ============================= HELPERS ============================= */
+function currentCoachEntry(){ return state.coaches.find(c=>String(c.id)===String(activeCoachId)); }
+function getSeason(id){ const ce = currentCoachEntry(); return ce ? ce.seasons.find(s=>String(s.id)===String(id)) : null; }
+function mostRecentSeasonOf(coachEntry){
+  const active = coachEntry.seasons.filter(s=>!s.archived);
+  if(active.length===0) return null;
+  return active.slice().sort((a,b)=> String(b.year).localeCompare(String(a.year)))[0];
+}
+function esc(str){ return (str==null?'':String(str)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function savePillHtml(){
+  if(JSONBIN_ENABLED){
+    return `<div class="save-pill"><span class="rdot" id="save-dot" style="background:var(--green);width:6px;height:6px;"></span>Synced</div>`;
+  }
+  return `<div class="save-pill" title="Add a JSONBin bin ID and API key in the code to sync across devices"><span class="rdot" id="save-dot" style="background:var(--amber);width:6px;height:6px;"></span>Saved locally</div>`;
+}
+
+/* ---- rating math shared by Capability and Coach Behaviours ---- */
+function groupAvg(entry, who){
+  const vals = (entry.items||[]).map(it=>it[who]).filter(v=>v>0);
+  if(vals.length===0) return 0;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function groupLabel(entry, who){
+  const avg = groupAvg(entry, who);
+  return avg>0 ? RATING_LABELS[Math.round(avg)] : '—';
+}
+function overallGroupAvg(groups, defs, who){
+  let sum=0, count=0;
+  defs.forEach(d=>{
+    (groups[d.key].items||[]).forEach(it=>{ if(it[who]>0){ sum+=it[who]; count++; } });
+  });
+  return count ? sum/count : 0;
+}
+function overallGroupLabel(groups, defs, who){
+  const avg = overallGroupAvg(groups, defs, who);
+  return avg>0 ? RATING_LABELS[Math.round(avg)] : '—';
+}
+function groupBiggestGap(groups, defs){
+  let best = null;
+  defs.forEach(d=>{
+    const entry = groups[d.key];
+    const s = groupAvg(entry,'self'), m = groupAvg(entry,'manager');
+    if(s>0 && m>0){
+      const gap = Math.abs(m-s);
+      if(!best || gap>best.gap) best = {label:d.label, gap};
+    }
+  });
+  return best;
+}
+function countCarried(groups, defs, who){
+  const flag = who==='self' ? 'carriedSelf' : 'carriedManager';
+  let n = 0;
+  defs.forEach(d=>{ groups[d.key].items.forEach(it=>{ if(it[flag]) n++; }); });
+  return n;
+}
+
+/* Coach / Mentor / Compare sub-tabs shared by Capability and Coach Behaviours */
+function perspectiveTabsHtml(sid, section){
+  const key = sid+':'+section;
+  const current = sectionTab[key] || 'self';
+  const tabs = [ ['self','Coach'], ['manager','Mentor'], ['compare','Compare'] ];
+  return `
+  <div class="persp-tabs">
+    ${tabs.map(([val,label])=>`<button class="persp-tab ${current===val?'active':''}" data-action="setSectionTab" data-sid="${sid}" data-section="${section}" data-val="${val}">${label}</button>`).join('')}
+  </div>
+  <div class="hint" style="margin:8px 0 14px;">Coach and Mentor tabs only show that person's own ratings — switch to Compare once both are in.</div>
+  `;
+}
+
+
+/* ============================= RENDER (ROOT) ============================= */
+function render(opts={}){
+  const app = document.getElementById('app');
+  if(activeCoachId===null){
+    app.innerHTML = renderRoster();
+  }else{
+    const ce = currentCoachEntry();
+    if(!ce){ activeCoachId = null; app.innerHTML = renderRoster(); attachRosterHandlers(); return; }
+    const snap = mostRecentSeasonOf(ce);
+    app.innerHTML = `
+      ${renderMasthead()}
+      ${renderSnapshot(ce, snap)}
+      ${renderTabs(ce)}
+      ${activeTab==='profile' ? renderProfileTab(ce) : renderSeasonTab(ce, getSeason(activeTab))}
+    `;
+  }
+  attachHandlers();
+}
+
+/* ============================= ROSTER VIEW ============================= */
+function renderRoster(){
+  const all = state.coaches;
+  const visible = all.filter(c=> showArchivedCoaches ? true : !c.archived);
+  const filtered = visible.filter(c=>{
+    if(!rosterFilter) return true;
+    const q = rosterFilter.toLowerCase();
+    return (c.coach.name||'').toLowerCase().includes(q) || (c.coach.role||'').toLowerCase().includes(q) || (c.coach.program||'').toLowerCase().includes(q);
+  });
+  const archivedCount = all.filter(c=>c.archived).length;
+
+  return `
+  <div class="masthead">
+    <div>
+      <div class="masthead-title">Coach Development &amp; Succession Profiles</div>
+      <div class="masthead-sub">A living record of development, capability and readiness for every coach</div>
+    </div>
+    ${savePillHtml()}
+  </div>
+
+  <div class="roster-header">
+    <div>
+      <div class="roster-title">All Coaches</div>
+      <div class="roster-count">${all.length} coach${all.length===1?'':'es'} tracked${archivedCount?` · ${archivedCount} archived`:''}</div>
+    </div>
+    <button class="primary-btn" id="add-coach-btn">+ Add Coach</button>
+  </div>
+
+  ${all.length>0 ? `
+  <div class="roster-search">
+    <input type="text" id="roster-search-input" placeholder="Search by name, role or program…" value="${esc(rosterFilter)}">
+  </div>` : ''}
+
+  ${all.length===0 ? `
+  <div class="roster-empty">
+    <div class="roster-empty-title">No coaches yet</div>
+    <div>Add your first coach to start building their development profile.</div>
+  </div>` : `
+  <div class="roster-grid">
+    ${filtered.map(c=>renderRosterCard(c)).join('')}
+    ${filtered.length===0 ? `<div class="empty-note">No coaches match "${esc(rosterFilter)}".</div>` : ''}
+  </div>
+  ${archivedCount>0 ? `<div style="margin-top:14px;"><button class="tool-btn" id="toggle-archived-coaches">${showArchivedCoaches?'Hide archived coaches':'Show archived coaches ('+archivedCount+')'}</button></div>` : ''}
+  `}
+  `;
+}
+
+function renderRosterCard(c){
+  const snap = mostRecentSeasonOf(c);
+  const capLabel = snap ? overallGroupLabel(snap.capability, CAPS, 'self') : '—';
+  const behLabel = snap ? overallGroupLabel(snap.behaviours, COMPETENCIES, 'self') : '—';
+  return `
+  <div class="roster-card ${c.archived?'archived':''}" data-open-coach="${c.id}">
+    <div class="roster-left">
+      <div class="roster-name">${esc(c.coach.name) || 'Unnamed coach'}</div>
+      <div class="roster-meta">${esc(c.coach.role) || 'Role not set'}${c.coach.program? ' · '+esc(c.coach.program):''}</div>
+    </div>
+    <div class="roster-right">
+      <div class="roster-stat">
+        <div class="roster-stat-label">Capability</div>
+        <div class="roster-stat-value">${esc(capLabel)}</div>
+      </div>
+      <div class="roster-stat">
+        <div class="roster-stat-label">Behaviours</div>
+        <div class="roster-stat-value">${esc(behLabel)}</div>
+      </div>
+      <div class="roster-actions">
+        <button class="tool-btn" data-action="archiveCoach" data-cid="${c.id}">${c.archived?'Unarchive':'Archive'}</button>
+        <button class="tool-btn danger" data-action="deleteCoach" data-cid="${c.id}">Delete</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================= COACH PROFILE VIEW ============================= */
+function renderMasthead(){
+  return `
+  <button class="back-link" id="back-to-roster">← All Coaches</button>
+  <div class="masthead">
+    <div>
+      <div class="masthead-title">Coach Development &amp; Succession Profile</div>
+      <div class="masthead-sub">A living record of development, capability and behaviours</div>
+    </div>
+    ${savePillHtml()}
+  </div>`;
+}
+
+function renderSnapshot(ce, snap){
+  const c = ce.coach;
+  return `
+  <div class="snapshot snapshot-minimal">
+    <div class="snap-name">${esc(c.name) || 'Unnamed Coach'}</div>
+    ${c.role ? `<div class="snap-role">${esc(c.role)}${c.specialistArea? ' · '+esc(c.specialistArea):''}</div>` : ''}
+  </div>`;
+}
+
+function renderTabs(ce){
+  const seasons = ce.seasons.filter(s=>!s.archived).sort((a,b)=>String(a.year).localeCompare(String(b.year)));
+  const archivedCount = ce.seasons.filter(s=>s.archived).length;
+  return `
+  <div class="tabbar">
+    <button class="tab ${activeTab==='profile'?'active':''}" data-tab="profile">Profile</button>
+    ${seasons.map(s=>`<button class="tab ${activeTab===String(s.id)?'active':''}" data-tab="${s.id}">${esc(String(s.year))}</button>`).join('')}
+    <button class="tab-add" id="add-season-btn">+ New Season</button>
+    ${archivedCount>0 ? `<button class="tab" id="toggle-archived-seasons" style="color:var(--ink-soft);">${showArchivedSeasons? 'Hide archived':'Archived ('+archivedCount+')'}</button>`:''}
+  </div>
+  ${showArchivedSeasons ? renderArchivedSeasonRow(ce) : ''}
+  `;
+}
+
+function renderArchivedSeasonRow(ce){
+  const archived = ce.seasons.filter(s=>s.archived);
+  if(archived.length===0) return '';
+  return `<div class="tabbar" style="margin-top:-10px;">
+    ${archived.map(s=>`<button class="tab" data-tab="${s.id}" style="opacity:.6;border:1px dashed var(--line);">${esc(String(s.year))} (archived)</button>`).join('')}
+  </div>`;
+}
+
+/* ---------- PROFILE TAB ---------- */
+function renderProfileTab(ce){
+  const c = ce.coach;
+  return `
+  <div class="card open">
+    <div class="card-body"><div class="card-body-inner">
+      <label class="field-label">Name</label>
+      <input type="text" id="c-name" value="${esc(c.name)}" placeholder="Coach's full name">
+      <div class="field-row">
+        <div>
+          <label class="field-label">Current role</label>
+          <input type="text" id="c-role" value="${esc(c.role)}" placeholder="e.g. Assistant Coach">
+        </div>
+        <div>
+          <label class="field-label">Current program</label>
+          <input type="text" id="c-program" value="${esc(c.program)}" placeholder="e.g. U19 Male Pathway">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label">Specialist area</label>
+          <input type="text" id="c-specialist" value="${esc(c.specialistArea)}" placeholder="e.g. Fast Bowling">
+        </div>
+        <div>
+          <label class="field-label">Years coaching</label>
+          <input type="text" id="c-years" value="${esc(c.yearsCoaching)}" placeholder="e.g. 6">
+        </div>
+      </div>
+      <label class="field-label">Mentor</label>
+      <input type="text" id="c-mentor" value="${esc(c.mentor)}" placeholder="Who is supporting this coach's development?">
+
+      <label class="field-label">What do I want players to experience when being coached by me?</label>
+      <textarea id="c-phil-exp" placeholder="A short, honest answer in the coach's own words">${esc(c.philosophyExperience)}</textarea>
+      <label class="field-label">What coaching behaviours are most important to me?</label>
+      <textarea id="c-phil-beh" placeholder="">${esc(c.philosophyBehaviours)}</textarea>
+
+      <label class="field-label">Future aspirations</label>
+      <div class="chip-select-group" id="aspirations-group">
+        ${ASPIRATIONS.map(a=>`<button type="button" class="chip-toggle ${c.aspirations.includes(a)?'on':''}" data-asp="${a}">${a}</button>`).join('')}
+      </div>
+    </div></div>
+  </div>
+
+  <div class="card open" style="margin-top:14px;">
+    <div class="card-head-left" style="padding:16px 18px 0;">
+      <div class="card-icon">${iconEnv()}</div>
+      <div>
+        <div class="card-title">Environment</div>
+        <div class="card-desc">Two perspectives on the environment this coach is building</div>
+      </div>
+    </div>
+    <div class="card-body-inner">
+      <label class="field-label">Coach — what environment am I trying to create?</label>
+      <textarea id="c-env-coach" placeholder="In the coach's own words">${esc(c.environmentCoachVision)}</textarea>
+      <label class="field-label">Mentor — what do I see this coach creating?</label>
+      <textarea id="c-env-mentor" placeholder="The mentor's honest observation">${esc(c.environmentMentorView)}</textarea>
+    </div>
+  </div>`;
+}
+
+/* ---------- SEASON TAB ---------- */
+function renderSeasonTab(ce, season){
+  if(!season) return `<div class="empty-note">Season not found.</div>`;
+  const sid = season.id;
+  return `
+  <div class="season-toolbar">
+    <button class="tool-btn" data-action="duplicate" data-sid="${sid}">Duplicate Season</button>
+    <button class="tool-btn" data-action="archive" data-sid="${sid}">${season.archived?'Unarchive':'Archive'} Season</button>
+    <button class="tool-btn danger" data-action="delete" data-sid="${sid}">Delete Season</button>
+  </div>
+  ${cardWrap(sid,'development','Development','Priorities the coach is working on this season', iconDev(), renderDevelopment(season))}
+  ${cardWrap(sid,'experiences','Experiences','Opportunities and exposure gained this season', iconExp(), renderExperiences(season))}
+  ${cardWrap(sid,'reflection','Reflection','Three questions worth returning to', iconRef(), renderReflection(season))}
+  ${cardWrap(sid,'capability','Capability','Self and manager view across 30 capability points, in five foundations', iconCap(), renderCapability(season))}
+  ${cardWrap(sid,'behaviours','Coach Behaviours','Self and manager view across every behaviour, in eight competencies', iconBeh(), renderBehaviours(season))}
+  ${cardWrap(sid,'developmentFocus','Development Focus','Strength, priority and next action', iconFocus(), renderDevelopmentFocus(season))}
+  `;
+}
+
+function cardWrap(sid, section, title, desc, icon, bodyHtml){
+  const key = sid+'|'+section;
+  const isOpen = !!openCards[key];
+  return `
+  <div class="card ${isOpen?'open':''}" data-cardkey="${key}">
+    <div class="card-head" data-toggle="${key}">
+      <div class="card-head-left">
+        <div class="card-icon">${icon}</div>
+        <div>
+          <div class="card-title">${title}</div>
+          <div class="card-desc">${desc}</div>
+        </div>
+      </div>
+      <svg class="chev" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="card-body"><div class="card-body-inner">${bodyHtml}</div></div>
+  </div>`;
+}
+
+/* -- icons -- */
+function iconSvg(path){ return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E1B3C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`; }
+function iconDev(){ return iconSvg('<path d="M12 2v20M2 12h20"/>'); }
+function iconExp(){ return iconSvg('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/>'); }
+function iconRef(){ return iconSvg('<circle cx="12" cy="12" r="8"/><path d="M12 9v3l2 2"/>'); }
+function iconCap(){ return iconSvg('<path d="M12 2l2.5 6.5L21 9l-5 4.5 1.5 7L12 17l-5.5 3.5 1.5-7L3 9l6.5-.5z"/>'); }
+function iconFocus(){ return iconSvg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5"/>'); }
+function iconEnv(){ return iconSvg('<path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="4"/>'); }
+function iconBeh(){ return iconSvg('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M8 11v2a3 3 0 003 3h1"/>'); }
+
+/* ---------- Development (goals) ---------- */
+function renderDevelopment(season){
+  const goals = season.development;
+  return `
+  ${goals.length===0 ? `<div class="empty-note">No development goals yet. Add the first one below.</div>` : ''}
+  ${goals.map((g,i)=>`
+    <div class="goal-card" data-goal-idx="${i}">
+      <button class="goal-remove" data-action="removeGoal" data-sid="${season.id}" data-idx="${i}">✕</button>
+      <label class="field-label">Development priority</label>
+      <input type="text" class="goal-field" data-field="priority" data-sid="${season.id}" data-idx="${i}" value="${esc(g.priority)}" placeholder="What is the coach working on?">
+      <label class="field-label">Why important</label>
+      <textarea class="goal-field" data-field="why" data-sid="${season.id}" data-idx="${i}" placeholder="Why this, why now?">${esc(g.why)}</textarea>
+      <label class="field-label">Success looks like</label>
+      <textarea class="goal-field" data-field="success" data-sid="${season.id}" data-idx="${i}" placeholder="How will we know it's working?">${esc(g.success)}</textarea>
+    </div>
+  `).join('')}
+  <button class="add-btn" data-action="addGoal" data-sid="${season.id}">➕ Add Goal</button>
+  `;
+}
+
+/* ---------- Experiences (chips) ---------- */
+function renderExperiences(season){
+  const exps = season.experiences;
+  const suggestions = EXPERIENCE_SUGGESTIONS.filter(s=>!exps.includes(s));
+  return `
+  <div class="chip-wrap" style="margin-bottom:14px;">
+    ${exps.length===0 ? `<div class="empty-note" style="padding:0;">No experiences logged yet.</div>` : ''}
+    ${exps.map((e,i)=>`<span class="exp-chip">${esc(e)}<button data-action="removeExp" data-sid="${season.id}" data-idx="${i}">✕</button></span>`).join('')}
+  </div>
+  ${suggestions.length>0 ? `
+  <div class="chip-wrap">
+    ${suggestions.map(s=>`<span class="exp-chip suggest" data-action="addExpSuggest" data-sid="${season.id}" data-val="${esc(s)}" style="cursor:pointer;">+ ${esc(s)}</span>`).join('')}
+  </div>` : ''}
+  <div class="exp-input-row">
+    <input type="text" id="exp-custom-${season.id}" placeholder="Add a custom experience">
+    <button data-action="addExpCustom" data-sid="${season.id}">Add</button>
+  </div>
+  `;
+}
+
+/* ---------- Reflection ---------- */
+function renderReflection(season){
+  const r = season.reflection;
+  return `
+  <label class="field-label">What impact did I have?</label>
+  <textarea class="reflect-field" data-field="impact" data-sid="${season.id}" placeholder="">${esc(r.impact)}</textarea>
+  <label class="field-label">What did I learn?</label>
+  <textarea class="reflect-field" data-field="learn" data-sid="${season.id}" placeholder="">${esc(r.learn)}</textarea>
+  <label class="field-label">What is my focus moving forward?</label>
+  <textarea class="reflect-field" data-field="focus" data-sid="${season.id}" placeholder="">${esc(r.focus)}</textarea>
+  `;
+}
+
+/* ---------- Capability ---------- */
+function likertLegendHtml(){
+  return `
+  <div class="likert-legend">
+    ${[1,2,3,4,5].map(n=>`<span><b>${n}</b>${RATING_LABELS[n]}</span>`).join('')}
+  </div>`;
+}
+
+function renderCapability(season){
+  const cap = season.capability;
+  const sid = season.id;
+  const perspective = sectionTab[sid+':capability'] || 'self';
+  const carriedCount = countCarried(cap, CAPS, perspective==='manager'?'manager':'self');
+  const showBoth = perspective==='compare';
+  const who = perspective==='manager' ? 'manager' : 'self';
+  return `
+  <div class="hint" style="margin:0 0 10px;">30 points across five foundations — rate what you consistently observe.</div>
+  ${perspectiveTabsHtml(sid,'capability')}
+  ${likertLegendHtml()}
+  ${!showBoth && carriedCount>0 ? `
+  <div class="carried-bar">
+    <span>${carriedCount} rating${carriedCount===1?'':'s'} carried forward from last season — confirm as still accurate, or just tap a new number to update.</span>
+    <button class="tool-btn" data-action="confirmAllCarriedCap" data-sid="${sid}" data-who="${who}">Confirm all as current</button>
+  </div>` : ''}
+  ${CAPS.map(d=>{
+    const entry = cap[d.key];
+    const selfAvg = groupAvg(entry,'self'), mgrAvg = groupAvg(entry,'manager');
+    const gap = (showBoth && selfAvg>0 && mgrAvg>0) ? (mgrAvg-selfAvg) : null;
+    return `
+    <div class="cap-block">
+      <div class="cap-block-head">
+        <div>
+          <div class="cap-name">${d.label}</div>
+          <div class="cap-sub">${d.sub}</div>
+        </div>
+        ${gap!==null ? `<div class="cap-sub">Gap: ${gap>0?'+':''}${gap.toFixed(1)}</div>` : ''}
+      </div>
+      ${d.items.map((item,idx)=>{
+        const it = entry.items[idx];
+        return `
+        <div class="item-block">
+          <div class="item-head">
+            <div class="item-title"><span class="item-code">${item.code}</span> ${esc(item.title)}</div>
+            ${showBoth
+              ? `${it.carriedSelf?'<span class="carried-tag">Self carried '+esc(String(it.carriedSelfFromYear))+'</span>':''} ${it.carriedManager?'<span class="carried-tag">Mgr carried '+esc(String(it.carriedManagerFromYear))+'</span>':''}`
+              : (who==='self' ? (it.carriedSelf?`<span class="carried-tag">Carried from ${esc(String(it.carriedSelfFromYear))}</span>`:'') : (it.carriedManager?`<span class="carried-tag">Carried from ${esc(String(it.carriedManagerFromYear))}</span>`:''))}
+          </div>
+          <div class="item-desc">${esc(item.desc)}</div>
+          <div class="item-rating-pair">
+            ${(showBoth || who==='self') ? `
+            <div class="item-rating-col">
+              <div class="beh-rating-label">Self</div>
+              <div class="rating-row">
+                ${[1,2,3,4,5].map(n=>`<button class="rating-btn compact ${it.self===n?'sel':''}" data-action="setCapRating" data-sid="${sid}" data-found="${d.key}" data-idx="${idx}" data-who="self" data-val="${n}">${n}</button>`).join('')}
+              </div>
+            </div>` : ''}
+            ${(showBoth || who==='manager') ? `
+            <div class="item-rating-col">
+              <div class="beh-rating-label">Manager</div>
+              <div class="rating-row">
+                ${[1,2,3,4,5].map(n=>`<button class="rating-btn compact ${it.manager===n?'sel':''}" data-action="setCapRating" data-sid="${sid}" data-found="${d.key}" data-idx="${idx}" data-who="manager" data-val="${n}">${n}</button>`).join('')}
+              </div>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+      <textarea class="cap-notes-field" data-sid="${sid}" data-found="${d.key}" placeholder="Evidence / notes for this foundation">${esc(entry.notes)}</textarea>
+      ${showBoth ? `
+      <div class="group-overall">
+        <span>${d.label} overall</span>
+        <span class="group-overall-value">${groupLabel(entry,'self')} / ${groupLabel(entry,'manager')}</span>
+      </div>` : ''}
+    </div>`;
+  }).join('')}
+  <div class="hint">3 = Effective is a strong score. A 5 should genuinely mean the coach develops other coaches and improves the system.</div>
+  ${showBoth ? renderCapDashboard(cap, season) : ''}
+  `;
+}
+
+function renderCapDashboard(cap, season){
+  const gap = groupBiggestGap(cap, CAPS);
+  return `
+  <div class="cap-block" style="background:var(--paper);margin-top:16px;">
+    <div class="cap-name" style="margin-bottom:12px;">Foundation Summary</div>
+    <div class="cap-dashboard">
+      ${CAPS.map(d=>{
+        const entry = cap[d.key];
+        const s = groupAvg(entry,'self'), m = groupAvg(entry,'manager');
+        return `<div class="cap-bar-row" style="grid-template-columns:80px 1fr 1fr 60px;">
+          <div class="cap-bar-label">${d.label}</div>
+          <div class="cap-bar-track" title="Self"><div class="cap-bar-fill" style="width:${s*20}%;"></div></div>
+          <div class="cap-bar-track" title="Manager"><div class="cap-bar-fill" style="width:${m*20}%;background:linear-gradient(90deg,var(--gold),var(--turf-deep));"></div></div>
+          <div class="cap-bar-num">${s?s.toFixed(1):'—'} / ${m?m.toFixed(1):'—'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="hint" style="margin-top:4px;">Bars: maroon = self rating, gold = manager rating.${gap ? ` Biggest gap: ${esc(gap.label)} (${gap.gap.toFixed(1)}).` : ''}</div>
+    <div class="cap-overall">
+      <div class="cap-overall-label">Overall — self / manager</div>
+      <div class="cap-overall-value">${overallGroupLabel(cap,CAPS,'self')} / ${overallGroupLabel(cap,CAPS,'manager')}</div>
+    </div>
+  </div>
+  `;
+}
+
+/* ---------- Coach Behaviours ---------- */
+function renderBehaviours(season){
+  const beh = season.behaviours;
+  const sid = season.id;
+  const perspective = sectionTab[sid+':behaviours'] || 'self';
+  const showBoth = perspective==='compare';
+  const who = perspective==='manager' ? 'manager' : 'self';
+  const carriedCount = countCarried(beh, COMPETENCIES, who);
+  return `
+  <div class="hint" style="margin:0 0 10px;">Every behaviour rated individually — same 1–5 scale as Capability.</div>
+  ${perspectiveTabsHtml(sid,'behaviours')}
+  ${likertLegendHtml()}
+  ${!showBoth && carriedCount>0 ? `
+  <div class="carried-bar">
+    <span>${carriedCount} rating${carriedCount===1?'':'s'} carried forward from last season — confirm as still accurate, or just tap a new number to update.</span>
+    <button class="tool-btn" data-action="confirmAllCarriedBeh" data-sid="${sid}" data-who="${who}">Confirm all as current</button>
+  </div>` : ''}
+  ${COMPETENCIES.map(c=>{
+    const entry = beh[c.key];
+    const selfAvg = groupAvg(entry,'self'), mgrAvg = groupAvg(entry,'manager');
+    const gap = (showBoth && selfAvg>0 && mgrAvg>0) ? (mgrAvg-selfAvg) : null;
+    return `
+    <div class="cap-block">
+      <div class="cap-block-head">
+        <div class="cap-name">${c.label}</div>
+        ${gap!==null ? `<div class="cap-sub">Gap: ${gap>0?'+':''}${gap.toFixed(1)}</div>` : ''}
+      </div>
+      ${c.behaviours.map((b,idx)=>{
+        const it = entry.items[idx];
+        return `
+        <div class="item-block">
+          <div class="item-head">
+            <div class="item-title">${esc(b)}</div>
+            ${showBoth
+              ? `${it.carriedSelf?'<span class="carried-tag">Self carried '+esc(String(it.carriedSelfFromYear))+'</span>':''} ${it.carriedManager?'<span class="carried-tag">Mgr carried '+esc(String(it.carriedManagerFromYear))+'</span>':''}`
+              : (who==='self' ? (it.carriedSelf?`<span class="carried-tag">Carried from ${esc(String(it.carriedSelfFromYear))}</span>`:'') : (it.carriedManager?`<span class="carried-tag">Carried from ${esc(String(it.carriedManagerFromYear))}</span>`:''))}
+          </div>
+          <div class="item-rating-pair">
+            ${(showBoth || who==='self') ? `
+            <div class="item-rating-col">
+              <div class="beh-rating-label">Self</div>
+              <div class="rating-row">
+                ${[1,2,3,4,5].map(n=>`<button class="rating-btn compact ${it.self===n?'sel':''}" data-action="setBehRating" data-sid="${sid}" data-comp="${c.key}" data-idx="${idx}" data-who="self" data-val="${n}">${n}</button>`).join('')}
+              </div>
+            </div>` : ''}
+            ${(showBoth || who==='manager') ? `
+            <div class="item-rating-col">
+              <div class="beh-rating-label">Manager</div>
+              <div class="rating-row">
+                ${[1,2,3,4,5].map(n=>`<button class="rating-btn compact ${it.manager===n?'sel':''}" data-action="setBehRating" data-sid="${sid}" data-comp="${c.key}" data-idx="${idx}" data-who="manager" data-val="${n}">${n}</button>`).join('')}
+              </div>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+      <textarea class="beh-notes-field" data-sid="${sid}" data-comp="${c.key}" placeholder="Evidence / notes for this competency">${esc(entry.notes)}</textarea>
+      ${showBoth ? `
+      <div class="group-overall">
+        <span>${c.label} overall</span>
+        <span class="group-overall-value">${groupLabel(entry,'self')} / ${groupLabel(entry,'manager')}</span>
+      </div>` : ''}
+    </div>`;
+  }).join('')}
+  <div class="hint">3 = Effective is a strong score. A gap simply flags where self-view and manager-view differ — useful to talk through, not a problem to fix.</div>
+  ${showBoth ? renderBehaviourDashboard(beh) : ''}
+  `;
+}
+
+function renderBehaviourDashboard(beh){
+  const gap = groupBiggestGap(beh, COMPETENCIES);
+  return `
+  <div class="cap-block" style="background:var(--paper);margin-top:16px;">
+    <div class="cap-name" style="margin-bottom:12px;">Behaviour Summary</div>
+    <div class="cap-dashboard">
+      ${COMPETENCIES.map(c=>{
+        const entry = beh[c.key];
+        const s = groupAvg(entry,'self'), m = groupAvg(entry,'manager');
+        return `<div class="cap-bar-row" style="grid-template-columns:130px 1fr 1fr 60px;">
+          <div class="cap-bar-label">${c.label}</div>
+          <div class="cap-bar-track" title="Self"><div class="cap-bar-fill" style="width:${s*20}%;"></div></div>
+          <div class="cap-bar-track" title="Manager"><div class="cap-bar-fill" style="width:${m*20}%;background:linear-gradient(90deg,var(--gold),var(--turf-deep));"></div></div>
+          <div class="cap-bar-num">${s?s.toFixed(1):'—'} / ${m?m.toFixed(1):'—'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="hint" style="margin-top:4px;">Bars: maroon = self rating, gold = manager rating.${gap ? ` Biggest gap: ${esc(gap.label)} (${gap.gap.toFixed(1)}).` : ''}</div>
+    <div class="cap-overall">
+      <div class="cap-overall-label">Overall — self / manager</div>
+      <div class="cap-overall-value">${overallGroupLabel(beh,COMPETENCIES,'self')} / ${overallGroupLabel(beh,COMPETENCIES,'manager')}</div>
+    </div>
+  </div>
+  `;
+}
+
+/* ---------- Development Focus ---------- */
+function renderDevelopmentFocus(season){
+  const f = season.developmentFocus;
+  return `
+  <label class="field-label">Key strength</label>
+  <textarea class="focus-field" data-field="strength" data-sid="${season.id}" placeholder="">${esc(f.strength)}</textarea>
+  <label class="field-label">Development priority</label>
+  <textarea class="focus-field" data-field="priority" data-sid="${season.id}" placeholder="">${esc(f.priority)}</textarea>
+  <label class="field-label">Action (next 6–12 months)</label>
+  <textarea class="focus-field" data-field="action" data-sid="${season.id}" placeholder="">${esc(f.action)}</textarea>
+  `;
+}
+
+/* ============================= EVENT HANDLERS ============================= */
+function attachHandlers(){
+  if(activeCoachId===null){ attachRosterHandlers(); return; }
+
+  document.getElementById('back-to-roster')?.addEventListener('click', ()=>{
+    activeCoachId = null; activeTab='profile'; render();
+  });
+
+  // Tabs
+  document.querySelectorAll('.tab[data-tab]').forEach(el=>{
+    el.addEventListener('click', ()=>{ activeTab = el.dataset.tab; render(); });
+  });
+  document.getElementById('add-season-btn')?.addEventListener('click', ()=>{
+    update(s=>{
+      const ce = currentCoachEntry();
+      const years = ce.seasons.map(x=>Number(x.year)).filter(n=>!isNaN(n));
+      const nextYear = years.length? Math.max(...years)+1 : new Date().getFullYear();
+      const prevSeason = mostRecentSeasonOf(ce);
+      const ns = newSeason(nextYear, prevSeason);
+      ce.seasons.push(ns);
+      activeTab = String(ns.id);
+    });
+  });
+  document.getElementById('toggle-archived-seasons')?.addEventListener('click', ()=>{ showArchivedSeasons = !showArchivedSeasons; render(); });
+
+  // Card accordion toggle
+  document.querySelectorAll('[data-toggle]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const key = el.dataset.toggle;
+      openCards[key] = !openCards[key];
+      render();
+    });
+  });
+
+  // Profile fields
+  const ce = currentCoachEntry();
+  bindText('c-name', v=>ce.coach.name=v);
+  bindText('c-role', v=>ce.coach.role=v);
+  bindText('c-program', v=>ce.coach.program=v);
+  bindText('c-specialist', v=>ce.coach.specialistArea=v);
+  bindText('c-years', v=>ce.coach.yearsCoaching=v);
+  bindText('c-mentor', v=>ce.coach.mentor=v);
+  bindText('c-phil-exp', v=>ce.coach.philosophyExperience=v);
+  bindText('c-phil-beh', v=>ce.coach.philosophyBehaviours=v);
+  bindText('c-env-coach', v=>ce.coach.environmentCoachVision=v);
+  bindText('c-env-mentor', v=>ce.coach.environmentMentorView=v);
+
+  document.querySelectorAll('[data-asp]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const a = el.dataset.asp;
+      update(s=>{
+        const asps = currentCoachEntry().coach.aspirations;
+        const idx = asps.indexOf(a);
+        if(idx>=0) asps.splice(idx,1); else asps.push(a);
+      });
+    });
+  });
+
+  // Season toolbar
+  document.querySelectorAll('[data-action="duplicate"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid;
+    update(s=>{
+      const c = currentCoachEntry();
+      const orig = c.seasons.find(x=>String(x.id)===String(sid));
+      const copy = JSON.parse(JSON.stringify(orig));
+      copy.id = uid();
+      copy.year = orig.year + ' (copy)';
+      copy.archived = false;
+      c.seasons.push(copy);
+      activeTab = String(copy.id);
+    });
+  }));
+  document.querySelectorAll('[data-action="archive"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid;
+    update(s=>{ const se = getSeason(sid); se.archived = !se.archived; if(se.archived) activeTab='profile'; });
+  }));
+  document.querySelectorAll('[data-action="delete"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid;
+    if(!confirm('Delete this season permanently? This cannot be undone.')) return;
+    update(s=>{ const c = currentCoachEntry(); c.seasons = c.seasons.filter(x=>String(x.id)!==String(sid)); activeTab='profile'; });
+  }));
+
+  // Goals
+  document.querySelectorAll('[data-action="addGoal"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid;
+    update(s=>{ getSeason(sid).development.push({priority:'', why:'', success:''}); });
+  }));
+  document.querySelectorAll('[data-action="removeGoal"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid, idx = Number(el.dataset.idx);
+    update(s=>{ getSeason(sid).development.splice(idx,1); });
+  }));
+  document.querySelectorAll('.goal-field').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const sid = el.dataset.sid, idx = Number(el.dataset.idx), field = el.dataset.field;
+      getSeason(sid).development[idx][field] = el.value;
+      persist();
+    });
+  });
+
+  // Experiences
+  document.querySelectorAll('[data-action="addExpSuggest"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid, val = el.dataset.val;
+    update(s=>{ getSeason(sid).experiences.push(val); });
+  }));
+  document.querySelectorAll('[data-action="removeExp"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid, idx = Number(el.dataset.idx);
+    update(s=>{ getSeason(sid).experiences.splice(idx,1); });
+  }));
+  document.querySelectorAll('[data-action="addExpCustom"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid;
+    const input = document.getElementById('exp-custom-'+sid);
+    const val = input.value.trim();
+    if(!val) return;
+    update(s=>{ getSeason(sid).experiences.push(val); });
+  }));
+
+  // Reflection
+  document.querySelectorAll('.reflect-field').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      getSeason(el.dataset.sid).reflection[el.dataset.field] = el.value;
+      persist();
+    });
+  });
+
+  // Coach / Mentor / Compare perspective tabs
+  document.querySelectorAll('[data-action="setSectionTab"]').forEach(el=>el.addEventListener('click',()=>{
+    const key = el.dataset.sid+':'+el.dataset.section;
+    sectionTab[key] = el.dataset.val;
+    render();
+  }));
+
+  // Capability ratings (item-level, self + manager tracked independently)
+  document.querySelectorAll('[data-action="setCapRating"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid, found = el.dataset.found, idx = Number(el.dataset.idx), who = el.dataset.who, val = Number(el.dataset.val);
+    const carriedFlag = who==='self' ? 'carriedSelf' : 'carriedManager';
+    update(s=>{
+      const it = getSeason(sid).capability[found].items[idx];
+      if(it[carriedFlag]){
+        it[carriedFlag] = false; it[who] = val;
+      }else{
+        it[who] = it[who]===val ? 0 : val;
+      }
+    });
+  }));
+  document.querySelectorAll('[data-action="confirmAllCarriedCap"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid, who = el.dataset.who;
+    const flag = who==='manager' ? 'carriedManager' : 'carriedSelf';
+    update(s=>{
+      const cap = getSeason(sid).capability;
+      Object.keys(cap).forEach(key=>{ cap[key].items.forEach(it=>{ it[flag]=false; }); });
+    });
+  }));
+  document.querySelectorAll('.cap-notes-field').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      getSeason(el.dataset.sid).capability[el.dataset.found].notes = el.value;
+      persist();
+    });
+  });
+
+  // Coach Behaviours ratings (item-level, self + manager tracked independently)
+  document.querySelectorAll('[data-action="setBehRating"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid, comp = el.dataset.comp, idx = Number(el.dataset.idx), who = el.dataset.who, val = Number(el.dataset.val);
+    const carriedFlag = who==='self' ? 'carriedSelf' : 'carriedManager';
+    update(s=>{
+      const it = getSeason(sid).behaviours[comp].items[idx];
+      if(it[carriedFlag]){
+        it[carriedFlag] = false; it[who] = val;
+      }else{
+        it[who] = it[who]===val ? 0 : val;
+      }
+    });
+  }));
+  document.querySelectorAll('[data-action="confirmAllCarriedBeh"]').forEach(el=>el.addEventListener('click',()=>{
+    const sid = el.dataset.sid, who = el.dataset.who;
+    const flag = who==='manager' ? 'carriedManager' : 'carriedSelf';
+    update(s=>{
+      const beh = getSeason(sid).behaviours;
+      Object.keys(beh).forEach(key=>{ beh[key].items.forEach(it=>{ it[flag]=false; }); });
+    });
+  }));
+  document.querySelectorAll('.beh-notes-field').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      getSeason(el.dataset.sid).behaviours[el.dataset.comp].notes = el.value;
+      persist();
+    });
+  });
+
+  // Development focus
+  document.querySelectorAll('.focus-field').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      getSeason(el.dataset.sid).developmentFocus[el.dataset.field] = el.value;
+      persist();
+    });
+  });
+}
+
+function attachRosterHandlers(){
+  document.getElementById('add-coach-btn')?.addEventListener('click', ()=>{
+    update(s=>{
+      const nc = newCoach();
+      s.coaches.push(nc);
+      activeCoachId = nc.id;
+      activeTab = 'profile';
+      openCards = {};
+    });
+  });
+
+  document.querySelectorAll('[data-open-coach]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('[data-action]')) return; // let archive/delete buttons handle themselves
+      activeCoachId = el.dataset.openCoach;
+      activeTab = 'profile';
+      openCards = {};
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-action="archiveCoach"]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const cid = el.dataset.cid;
+      update(s=>{ const c = s.coaches.find(x=>String(x.id)===String(cid)); c.archived = !c.archived; });
+    });
+  });
+  document.querySelectorAll('[data-action="deleteCoach"]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const cid = el.dataset.cid;
+      if(!confirm('Delete this coach and all their seasons permanently? This cannot be undone.')) return;
+      update(s=>{ s.coaches = s.coaches.filter(x=>String(x.id)!==String(cid)); });
+    });
+  });
+
+  document.getElementById('roster-search-input')?.addEventListener('input', (e)=>{
+    rosterFilter = e.target.value;
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0,y);
+    document.getElementById('roster-search-input')?.focus();
+  });
+  document.getElementById('toggle-archived-coaches')?.addEventListener('click', ()=>{ showArchivedCoaches = !showArchivedCoaches; render(); });
+}
+
+function bindText(id, setter){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('input', ()=>{ setter(el.value); persist(); });
+}
+
+/* ============================= INIT ============================= */
+loadState();
+</script>
+</body>
+</html>
