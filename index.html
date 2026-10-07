@@ -544,7 +544,15 @@ async function jbCreateBin(content, name){
   const json = await res.json();
   return json.metadata.id;
 }
+/* One shared read/update access key is reused for every coach. JSONBin access keys
+   are not bin-specific, and free accounts allow only a couple of them. */
+function sharedAccessKey(){
+  const c = (state.coaches||[]).find(x=>x.dataAccessKey);
+  return c ? { accessKey:c.dataAccessKey, accessKeyId:c.dataAccessKeyId } : null;
+}
 async function jbCreateAccessKey(name){
+  const shared = sharedAccessKey();
+  if(shared) return shared;
   const res = await fetch('https://api.jsonbin.io/v3/a', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'X-Master-Key':JSONBIN_API_KEY, 'X-Key-Name': (name||'key').slice(0,32) },
@@ -1600,7 +1608,7 @@ function attachRosterHandlers(){
       update(s=>{ s.coaches = s.coaches.filter(x=>String(x.id)!==String(cid)); indexDirty = true; });
       if(JSONBIN_ENABLED && idx && idx.dataBinId){
         jbDeleteBin(idx.dataBinId);
-        jbDeleteAccessKey(idx.dataAccessKeyId);
+        if(!state.coaches.some(x=>x.dataAccessKeyId && x.dataAccessKeyId===idx.dataAccessKeyId)) jbDeleteAccessKey(idx.dataAccessKeyId);
       }
     });
   });
